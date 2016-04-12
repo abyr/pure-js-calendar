@@ -48,17 +48,18 @@
     border: 1px solid #ccc;
     border-radius: 3px;
     color: #333;
-    margin-left: 5px;
+    margin-left: 15px;
     padding: 2px 3px;
     position: relative;
-    top: -2px;
+    /*top: -2px;*/
     text-decoration: none;
 }
 
 .month-links {
     outline: none;
     position: relative;
-    top: 3px;
+    top: 5px;
+    margin: 0 10px;
 }
 .month-links img { outline: none; }
 img { border: 0;}
