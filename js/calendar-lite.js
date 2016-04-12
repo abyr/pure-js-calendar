@@ -18,7 +18,8 @@ var Calendar = function(_opts) {
         createBtnID      : 'evt-text',
         fullEventID      : 'full-event',
         fullEventCloseID : 'close-full-event',
-        noEvents: true
+        noEvents: true,
+        imgBasePath: ''
     }
     // set proposed opts
     for (var opt in _this.opts){
@@ -382,11 +383,13 @@ var Calendar = function(_opts) {
             return (_cell._isFirstRow) ? dayNames[_cell._dayIdx] + ', ' + _cell.dt.getDate() : _cell.dt.getDate().toString();
         }
 
-        this.onclick = function(e){
+        this.onclick = function (e) {
             // open event popup
             _this.removeSelection();
             _cell.select();
-            _this.showFullEvent(e.target);
+            if (_this.opts.noEvents === false) {
+                _this.showFullEvent(e.target);
+            }
         }
 
         this.setElement = function(_el){
@@ -572,13 +575,14 @@ var Calendar = function(_opts) {
         if (debug) console.log(calStr);
     }
 
-    this.generateLayout = function(){
-
+    this.generateLayout = function () {
         var calContainer = document.getElementById(_this.opts.calID);
+
         calContainer.innerHTML = "";
 
-        if (this.opts.noEvents === false) {
+        var imgBasePath = this.opts.imgBasePath;
 
+        if (this.opts.noEvents === false) {
             // create event panel
             var eventPanel = _this.createElement('div', {}, 'event-panel');
             var addEventBtn = _this.createElement('a', {
@@ -595,7 +599,9 @@ var Calendar = function(_opts) {
                 placeholder : "Событие, дата или участник",
                 type : "text"
             });
-            var searchIcon = _this.createElement('img', {src : "img/search.png"}, 'search-icon');
+            var searchIcon = _this.createElement('img', {
+                src: imgBasePath + "img/search.png"
+            }, 'search-icon');
             eventPanel.appendChild(addEventBtn);
             eventPanel.appendChild(updateEventBtn);
             eventPanel.appendChild(searchInput);
@@ -610,14 +616,20 @@ var Calendar = function(_opts) {
             id : 'prev-month',
             href : '#'
         }, 'month-links');
-        var prevMonImg = _this.createElement('img', {src : "img/arr_prev.png", alt : "<<"});
+        var prevMonImg = _this.createElement('img', {
+            src : imgBasePath + "img/arr_prev.png",
+            alt : "<<"
+        });
         prevMon.appendChild(prevMonImg);
         var dateStr = _this.createElement('span', {id : 'date-str'});
         var nextMon = _this.createElement('a',{
             id : 'next-month',
             href : '#'
         }, 'month-links');
-        var nextMonImg = _this.createElement('img', {src : "img/arr_next.png", alt : ">>"});
+        var nextMonImg = _this.createElement('img', {
+            src : imgBasePath + "img/arr_next.png",
+            alt : ">>"
+        });
         nextMon.appendChild(nextMonImg);
         var today = _this.createElement('a', {id : 'today', href : '#'});
         today.innerHTML = "Сегодня";
@@ -630,49 +642,52 @@ var Calendar = function(_opts) {
         // add cal-body ;)
         calContainer.appendChild(_this.createElement('div', {id : 'cal-body'}));
 
-        // add add-event-fast popup
-        var addEventFast = _this.createElement('div', {id : 'add-event-fast'});
-        var closeEventFast = _this.createElement('div', {id : 'close-fast-popup'}, 'close');
-        closeEventFast.innerHTML = 'x';
-        addEventFast.appendChild(closeEventFast);
-        var aefArrow = _this.createElement('div', {}, 'arrow');
-        var aefAImg = _this.createElement('img', {
-            src : 'img/up-arrow.png',
-            alt : ''
-        });
-        aefArrow.appendChild(aefAImg);
-        addEventFast.appendChild(aefArrow);
-        var eventText = _this.createElement('input', {
-            type : 'text',
-            id : 'evt-text',
-            placeholder : '5 Марта, День рождения',
-        });
-        addEventFast.appendChild(eventText);
-        var createBtn = _this.createElement('a', {
-            href : "#",
-            id : 'add-event'
-        }, 'rnd-button');
-        createBtn.innerHTML = 'Создать';
-        addEventFast.appendChild(createBtn);
-        calContainer.appendChild(addEventFast);
+        if (this.opts.noEvents === false) {
+            // add add-event-fast popup
+            var addEventFast = _this.createElement('div', {id : 'add-event-fast'});
+            var closeEventFast = _this.createElement('div', {id : 'close-fast-popup'}, 'close');
+            closeEventFast.innerHTML = 'x';
+            addEventFast.appendChild(closeEventFast);
+            var aefArrow = _this.createElement('div', {}, 'arrow');
+            var aefAImg = _this.createElement('img', {
+                src : imgBasePath + 'img/up-arrow.png',
+                alt : ''
+            });
+            aefArrow.appendChild(aefAImg);
+            addEventFast.appendChild(aefArrow);
+            var eventText = _this.createElement('input', {
+                type : 'text',
+                id : 'evt-text',
+                placeholder : '5 Марта, День рождения',
+            });
+            addEventFast.appendChild(eventText);
+            var createBtn = _this.createElement('a', {
+                href : "#",
+                id : 'add-event'
+            }, 'rnd-button');
+            createBtn.innerHTML = 'Создать';
+            addEventFast.appendChild(createBtn);
+            calContainer.appendChild(addEventFast);
 
-        // add full-event
-        var fullEvent = _this.createElement('div', {id : 'full-event'});
-        var closeFullEvent = _this.createElement('div', {id : 'close-full-event'}, 'close');
-        closeFullEvent.innerHTML = 'x';
-        fullEvent.appendChild(closeFullEvent);
-        var feArrow = _this.createElement('div', {}, 'arrow');
-        var feAImg = _this.createElement('img', {
-            src : 'img/left-arrow.png',
-            alt : '<'
-        });
-        feArrow.appendChild(feAImg);
-        fullEvent.appendChild(feArrow);
 
-        var feContent = _this.createElement('div', {id : 'fe-content'});
-        fullEvent.appendChild(feContent);
+            // add full-event
+            var fullEvent = _this.createElement('div', {id : 'full-event'});
+            var closeFullEvent = _this.createElement('div', {id : 'close-full-event'}, 'close');
+            closeFullEvent.innerHTML = 'x';
+            fullEvent.appendChild(closeFullEvent);
+            var feArrow = _this.createElement('div', {}, 'arrow');
+            var feAImg = _this.createElement('img', {
+                src : imgBasePath + 'img/left-arrow.png',
+                alt : '<'
+            });
+            feArrow.appendChild(feAImg);
+            fullEvent.appendChild(feArrow);
 
-        calContainer.appendChild(fullEvent);
+            var feContent = _this.createElement('div', {id : 'fe-content'});
+            fullEvent.appendChild(feContent);
+
+            calContainer.appendChild(fullEvent);
+        }
     }
 
     this.init(_this.opts);

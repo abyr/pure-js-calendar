@@ -7,11 +7,13 @@
     <script src="js/calendar-lite.js"></script>
 </head>
 <body>
-    <div id="cal">
+    <div id="calendar">
     </div>
     <script>
         (function(){
-            document.Cal = new Calendar({});
+            document.Cal = new Calendar({
+                calID: 'calendar'
+            });
         })();
     </script>
 </body>
