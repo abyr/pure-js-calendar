@@ -1,7 +1,6 @@
 
 .calendar {
-    position: relative;
-    width: 950px;
+    background-color: #fff;
 }
 
 #date-str {
@@ -101,9 +100,9 @@ img { border: 0;}
     border-color: #67ace0;
 }
 #cal-tbl td div.today{
-    background: #f5f4f2;
-    color: #666;
+    background: #f0f2f5;
     font-weight: bold;
+    border: 1px solid #555;
 }
 
 #add-event-fast {
