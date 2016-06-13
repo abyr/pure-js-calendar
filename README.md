@@ -6,4 +6,6 @@ Hi this is simple js calendar with events on pure js.
 + autogeneration added.
 - remove hardcoded strings soon.
 
-Demo: http://akopichin.com/cal/index.html
+Demo full http://abyr.github.io/pure-js-calendar
+
+Demo light http://abyr.github.io/pure-js-calendar/index-lite.html
