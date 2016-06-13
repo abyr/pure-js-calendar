@@ -58,7 +58,7 @@
 
         this.curDate = this.opts.date;
 
-        this.events = (localStorage && localStorage.getItem('calEvents')) ? JSON.parse(localStorage.getItem('calEvents')) : {};
+        this.events = this.geEvents();
 
         this.cellsData = {};
 
@@ -77,6 +77,15 @@
                 this.opts[key] = opt;
             }
         }.bind(this));
+    };
+
+    Calendar.prototype.geEvents = function () {
+        var localyStored = localStorage && localStorage.getItem('calEvents') ;
+
+        if (localyStored) {
+            return JSON.parse(localyStored);
+        }
+        return {};
     };
 
     Calendar.prototype.setDateText = function () {
