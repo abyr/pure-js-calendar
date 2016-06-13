@@ -1,8 +1,9 @@
-(function (namespace) { 
+(function (namespace) {
     var Calendar = function (_opts) {
-        var _this = this;
-        var debug = false;
-        var DAY = 24 * 60 * 60 * 1000;
+        var _this = this,
+            debug = true,
+            DAY = 24 * 60 * 60 * 1000;
+
         // options
         _this.opts = {
             calID            : 'cal',
@@ -12,25 +13,25 @@
             dateTextID       : 'date-str',
             nextMonthID      : 'next-month',
             prevMonthID      : 'prev-month',
-            addBtnID         : 'add-event-btn',
+            addBtnID         : 'add-event-btn', 
             addPopupID       : 'add-event-fast',
             addPopupCloseID  : 'close-fast-popup',
             createEventID    : 'add-event',
             createBtnID      : 'evt-text',
             fullEventID      : 'full-event',
             fullEventCloseID : 'close-full-event'
-        }
+        };
         
         this.setOptions(_opts);
 
         _this.editedEventDate = "";
         _this.editedEventElement = null;
-        //_this.calBody = document.getElementById(_this.opts.tblID);
 
-        var pad = function(num, pad){
+        var pad = function (num, pad) {
             var s = "000" + num;
             return s.substr(s.length-pad);
-        }
+        };
+        
         var dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
         var monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
         var monthNamesAdv = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
@@ -38,123 +39,143 @@
         // set curDate
         //_this.curDate = (opts.date) ? opts.date : new Date();
         _this.curDate = _this.opts.date;
-        if (debug) console.log('**************** ' + _this.curDate);
+        debug && console.log('**************** ' + _this.curDate);
 
-        _this.hasClass = function(el,cls) {
+        _this.hasClass = function (el,cls) {
             return el.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
-        }
-        _this.addClass = function(el,cls) {
-            if (!_this.hasClass(el,cls)) el.className += " "+cls;
-        }
-        _this.removeClass = function(el,cls) {
+        };
+        _this.addClass = function (el,cls) {
+            if (!_this.hasClass(el,cls)) {
+                el.className += " "+cls;
+            }
+        };
+        _this.removeClass = function (el,cls) {
             if (_this.hasClass(el,cls)) {
                 var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
                 el.className=el.className.replace(reg,' ');
             }
-        }
-
-        var isLeapYear = function(year){
-            return ((year % 400 == 0) || ((year % 4 == 0) && (year % 100 !=0)));
-        }
+        };
 
         _this.events = (localStorage && localStorage.getItem('calEvents')) ? JSON.parse(localStorage.getItem('calEvents')) : {};
-        if (debug) console.log('events', _this.events);
+        debug && console.log('events', _this.events);
 
         _this.cellsData = {};
-        _this.removeSelection = function(){
-            for (var c in _this.cellsData){
-                _this.cellsData[c].unselect();
-            }
-        }
+        _this.removeSelection = function () {
+            var c;
 
-        this.setDateText = function(){
+            for (c in this.cellsData) {
+                if (this.cellsData.hasOwnProperty(c)) {
+                    _this.cellsData[c].unselect();
+                }
+            }
+        };
+
+        this.setDateText = function () {
             if (_this.opts.dateTextID) {
                 var el = document.getElementById(_this.opts.dateTextID);
                 el.innerHTML = monthNames[_this.opts.date.getMonth()] + " " + _this.opts.date.getFullYear();
             }
-        }
+        };
 
-        this.showToday = function(){
-            if (_this.opts.todayID){
-                var el = document.getElementById(_this.opts.todayID);
-                el.onclick = function(e){
+        this.showToday = function () {
+            var el;
+
+            if (this.opts.todayID) {
+                el = document.getElementById(_this.opts.todayID);
+
+                el.onclick = function () {
                     _this.opts.date = new Date();
                     _this.init(_this.opts);
                     return false;
-                }
+                };
             }
-        }
+        };
 
-        this.initNextMonthButton = function(){
-            if (_this.opts.nextMonthID){
-                var el = document.getElementById(_this.opts.nextMonthID);
-                el.onclick = function(e){
+        this.initNextMonthButton = function () {
+            var el;
+
+            if (_this.opts.nextMonthID) {
+                el = document.getElementById(_this.opts.nextMonthID);
+                el.onclick = function () {
                     var d = _this.opts.date;
                     d.setMonth(d.getMonth()+1);
                     _this.opts.date = d;
                     _this.init(_this.opts);
                     return false;
-                }
+                };
             }
-        }
+        };
 
-        this.initPrevMonthButton = function(){
-            if (_this.opts.prevMonthID){
-                var el = document.getElementById(_this.opts.prevMonthID);
-                el.onclick = function(e){
+        this.initPrevMonthButton = function () {
+            var el;
+
+            if (_this.opts.prevMonthID) {
+                el = document.getElementById(_this.opts.prevMonthID);
+                el.onclick = function () {
                     var d = _this.opts.date;
                     d.setMonth(d.getMonth()-1);
                     _this.opts.date = d;
                     _this.init(_this.opts);
                     return false;
-                }
+                };
             }
-        }
+        };
 
-        this.initAddEventButton = function(){
-            if (_this.opts.addBtnID && _this.opts.addPopupID && _this.opts.addPopupCloseID){
-                var el = document.getElementById(_this.opts.addBtnID);
-                el.onclick = function(e){
+        this.initAddEventButton = function () {
+            var el;
+
+            if (_this.opts.addBtnID && _this.opts.addPopupID && _this.opts.addPopupCloseID) {
+                el = document.getElementById(_this.opts.addBtnID);
+                el.onclick = function (e) {
+                    var inp;
+
                     _this.addClass(el, 'active');
-                    var inp = document.getElementById(_this.opts.createBtnID);
+                    inp = document.getElementById(_this.opts.createBtnID);
                     inp.value = "";
-                    var e = document.getElementById(_this.opts.addPopupID);
+                    e = document.getElementById(_this.opts.addPopupID);
                     e.style.display = 'block';
-                    document.getElementById(_this.opts.addPopupCloseID).onclick = function(_e){
+                    document.getElementById(_this.opts.addPopupCloseID).onclick = function () {
                         _this.removeClass(el, 'active');
                         e.style.display = "none";
-                    }
+                    };
                     _this.initCreateEventButton();
                     return false;
-                }
+                };
             }
-        }
+        };
 
-        this.hidePopup = function(){
-            var el = document.getElementById(_this.opts.addBtnID);
+        this.hidePopup = function () {
+            var el = document.getElementById(_this.opts.addBtnID),
+                e;
+
             _this.removeClass(el, 'active');
-            var e = document.getElementById(_this.opts.addPopupID);
+            e = document.getElementById(_this.opts.addPopupID);
             e.style.display = "none";
-        }
+        };
 
-        this.initCreateEventButton = function(){
-            if (_this.opts.createEventID){
-                var el = document.getElementById(_this.opts.createEventID);
-                el.onclick = function(e){
-                    var inp = document.getElementById(_this.opts.createBtnID);
-                    var val = inp.value;
-                    if (val.length > 5 && val.indexOf(',') != -1){
-                        var evtArr = val.split(',');
-                        var dt = evtArr[0].split(' ')[0];
-                        var mon = parseInt(monthNamesAdv.indexOf(_this.capitalize(evtArr[0].split(' ')[1]))) + 1;
-                        var _evt = {
+        this.initCreateEventButton = function () {
+            var el;
+
+            if (_this.opts.createEventID) {
+                el = document.getElementById(_this.opts.createEventID);
+
+                el.onclick = function () {
+                    var inp = document.getElementById(_this.opts.createBtnID),
+                        val = inp.value,
+                        evtArr, dt, mon, _evt, hash, c;
+
+                    if (val.length > 5 && val.indexOf(',') !== -1) {
+                        evtArr = val.split(',');
+                        dt = evtArr[0].split(' ')[0];
+                        mon = parseInt(monthNamesAdv.indexOf(_this.capitalize(evtArr[0].split(' ')[1]))) + 1;
+                        _evt = {
                                 name : evtArr[1],
                                 participants : "",
                                 description : ""
                             };
-                        var hash = dt+'-'+mon+'-'+_this.opts.date.getFullYear();
-                        var c = null;
-                        if (_this.cellsData[hash]){
+                        hash = dt+'-'+mon+'-'+_this.opts.date.getFullYear();
+                        c = null;
+                        if (_this.cellsData[hash]) {
                             c = _this.cellsData[hash];
                             c.setEvent(_evt);
                         } else {
@@ -167,48 +188,51 @@
                         _this.cellsData[hash].el.getElementsByTagName('div')[0].click();
                     }
                     return false;
-                }
+                };
             }
-        }
+        };
 
-        this.capitalize = function(s){
+        this.capitalize = function (s) {
             return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        }
+        };
 
-        this.fullPopupClose = function(){
+        this.fullPopupClose = function () {
             var fe = document.getElementById(_this.opts.fullEventID);
             fe.style.display = "none";
             _this.removeSelection();
-        }
+        };
 
-        this.showFullEvent = function(el){
-            if (_this.opts.fullEventID){
-                var pos = _this.findPos(el.parentNode);
+        this.showFullEvent = function (el) {
+            var pos, fe, fec, _evt, eventName, _cell, _date, p, capt, 
+                pText, pName, descr, pDescr, tDescr, feCtrl, save, remove;
+
+            if (_this.opts.fullEventID) {
+                pos = _this.findPos(el.parentNode);
                 // fe - full-event
-                var fe = document.getElementById(_this.opts.fullEventID);
+                fe = document.getElementById(_this.opts.fullEventID);
                 fe.style.display = "block";
                 fe.style.left = (pos[0]+110)+'px';
                 fe.style.top = ((pos[1])+(window.scrollY || 0)-38)+'px';
 
                 // clear content
-                var fec = document.getElementById('fe-content');
+                fec = document.getElementById('fe-content');
                 fec.innerHTML = "";
 
                 // close button
-                document.getElementById(_this.opts.fullEventCloseID).onclick = function(e){
+                document.getElementById(_this.opts.fullEventCloseID).onclick = function () {
                     _this.fullPopupClose();
-                }
+                };
 
                 // show fields
-                var _evt = _this.events[el.parentNode.getAttribute('data-date-str')];
-                var _cell = _this.cellsData[el.parentNode.getAttribute('data-date-str')];
+                _evt = _this.events[el.parentNode.getAttribute('data-date-str')];
+                _cell = _this.cellsData[el.parentNode.getAttribute('data-date-str')];
                 _this.editedEventDate = el.parentNode.getAttribute('data-date-str');
                 //_this.editedEventElement = el.parentNode;
-                if (_evt && _evt.name){
-                    var eventName = _this.createElement('h2', {id : 'event-name'});
+                if (_evt && _evt.name) {
+                    eventName = _this.createElement('h2', {id : 'event-name'});
                     eventName.innerHTML = _evt.name;
                 } else {
-                    var eventName = _this.createElement('input', {
+                    eventName = _this.createElement('input', {
                         id : 'event-name-input',
                         placeholder : 'Событие',
                         type : 'text'
@@ -216,20 +240,20 @@
                 }
                 fec.appendChild(eventName);
 
-                var _date = _this.createElement('div', {id:"date"}, 'field');
+                _date = _this.createElement('div', {id:"date"}, 'field');
                 _date.innerHTML = _cell.dt.getDate() + ' ' + monthNamesAdv[_cell.dt.getMonth()];
                 fec.appendChild(_date);
 
-                var p = _this.createElement('div', {id: 'participants'});
-                if (_evt && _evt.participants){
-                    var capt = _this.createElement('p', null, 'caption');
+                p = _this.createElement('div', {id: 'participants'});
+                if (_evt && _evt.participants) {
+                    capt = _this.createElement('p', null, 'caption');
                     capt.innerText = 'Участники';
                     p.appendChild(capt);
-                    var pText = _this.createElement('p', {id: 'p-text'}, 'field');
+                    pText = _this.createElement('p', {id: 'p-text'}, 'field');
                     pText.innerText = _evt.participants;
                     p.appendChild(pText);
                 } else {
-                    var pName = _this.createElement('input', {
+                    pName = _this.createElement('input', {
                         id: 'p-name',
                         type: 'text',
                         placeholder: 'Имена участников'
@@ -237,13 +261,13 @@
                     p.appendChild(pName);
                 }
                 fec.appendChild(p);
-                var descr = _this.createElement('p', {id: 'description'});
-                if (_evt && _evt.description){
-                    var pDescr = _this.createElement('p', {id: 't-description'}, 'field');
+                descr = _this.createElement('p', {id: 'description'});
+                if (_evt && _evt.description) {
+                    pDescr = _this.createElement('p', {id: 't-description'}, 'field');
                     pDescr.innerText = _evt.description;
                     descr.appendChild(pDescr);
                 } else {
-                    var tDescr = _this.createElement('textarea', {
+                    tDescr = _this.createElement('textarea', {
                         id: 't-description',
                         cols: 30,
                         rowd: 30,
@@ -252,79 +276,94 @@
                     descr.appendChild(tDescr);
                 }
                 fec.appendChild(descr);
-                var feCtrl = _this.createElement('div', {id: 'full-event-controls'});
-                var save = _this.createElement('a', {
+                feCtrl = _this.createElement('div', {id: 'full-event-controls'});
+                save = _this.createElement('a', {
                     id: 'fec-save',
                     href: '#'
                 }, 'rnd-button');
                 save.innerHTML = "Готово";
-                save.onclick = function(e){
+                save.onclick = function (e) {
                     _this.saveEventBtnClick(e);
                     return false;
-                }
-                var remove = _this.createElement('a', {
+                };
+                remove = _this.createElement('a', {
                     id: 'fec-remove',
                     href: '#'
                 }, 'rnd-button');
                 remove.innerHTML = "Удалить";
-                remove.onclick = function(e){
+                remove.onclick = function (e) {
                     _this.removeEventBtnClick(e);
                     return false;
-                }
+                };
                 feCtrl.appendChild(save);
                 feCtrl.appendChild(remove);
                 fec.appendChild(feCtrl);
             }
-        }
+        };
 
-        this.saveEventBtnClick = function(_e){
-            var e = _this.events[_this.editedEventDate] || {};
+        this.saveEventBtnClick = function () {
+            var e, _cell;
+
+            e = _this.events[_this.editedEventDate] || {};
             e.name = (document.getElementById('event-name-input')) ? document.getElementById('event-name-input').value : e.name;
             e.participants = (document.getElementById('p-name')) ? document.getElementById('p-name').value : e.participants;
             e.description =(document.getElementById('t-description')) ? document.getElementById('t-description').value : e.description;
             //var el = _this.events[_this.editedEventElement];
-            var _cell = _this.cellsData[_this.editedEventDate];
+            _cell = _this.cellsData[_this.editedEventDate];
             _cell.setEvent(e);
             _this.editedEventDate = "";
             //_this.editedEventElement = null;
             _this.fullPopupClose();
-        }
-        this.removeEventBtnClick = function(_e){
+        };
+        this.removeEventBtnClick = function () {
             var _cell = _this.cellsData[_this.editedEventDate];
             _cell.unsetEvent();
             _this.editedEventDate = "";
             _this.editedEventElement = null;
             _this.fullPopupClose();
-        }
+        };
 
-        this.createElement = function(el, attrs, className){
-            var _el = document.createElement(el);
-            for (var attr in attrs){
-                _el.setAttribute(attr, attrs[attr]);
+        this.createElement = function (el, attrs, className) {
+            var _el = document.createElement(el),
+                attr;
+
+            for (attr in attrs) {
+                if (attrs.hasOwnProperty(attr)) {
+                    _el.setAttribute(attr, attrs[attr]);
+                }
             }
-            if (className){
+            if (className) {
                 _el.className = className;
             }
             return _el;
-        }
+        };
 
-        this.findPos = function(obj) {
-            var curleft = 0;
-            var curtop = 0;
-            if(obj.offsetLeft) curleft += parseInt(obj.offsetLeft);
-            if(obj.offsetTop) curtop += parseInt(obj.offsetTop);
-            if(obj.scrollTop && obj.scrollTop > 0) curtop -= parseInt(obj.scrollTop);
-            if(obj.offsetParent) {
-                var pos = _this.findPos(obj.offsetParent);
+        this.findPos = function (obj) {
+            var curleft = 0, 
+                curtop = 0,
+                pos, thewindow;
+
+            if (obj.offsetLeft) {
+                curleft += parseInt(obj.offsetLeft);
+            }
+            if (obj.offsetTop) {
+                curtop += parseInt(obj.offsetTop);
+            }
+            if (obj.scrollTop && obj.scrollTop > 0) {
+                curtop -= parseInt(obj.scrollTop);
+            }
+            if (obj.offsetParent) {
+                pos = _this.findPos(obj.offsetParent);
                 curleft += pos[0];
                 curtop += pos[1];
             } else if(obj.ownerDocument) {
-                var thewindow = obj.ownerDocument.defaultView;
-                if(!thewindow && obj.ownerDocument.parentWindow)
+                thewindow = obj.ownerDocument.defaultView;
+                if (!thewindow && obj.ownerDocument.parentWindow) {
                     thewindow = obj.ownerDocument.parentWindow;
-                if(thewindow) {
-                    if(thewindow.frameElement) {
-                        var pos = _this.findPos(thewindow.frameElement);
+                }
+                if (thewindow) {
+                    if (thewindow.frameElement) {
+                        pos = _this.findPos(thewindow.frameElement);
                         curleft += pos[0];
                         curtop += pos[1];
                     }
@@ -332,9 +371,9 @@
             }
 
             return [curleft,curtop];
-        }
+        };
 
-        var Cell = function(_d, col, el, isFirstRow){
+        var Cell = function (_d, col, el, isFirstRow) {
             var _cell = this;
 
             this.isToday = false;
@@ -351,14 +390,16 @@
             this._isFirstLine = false;
             this._dayIdx = null;
 
-            this.init = function(_d, col, el, isFirstRow){
+            this.init = function (_d, col, el, isFirstRow) {
+                var div, d;
+
                 _cell.dt = _d;
                 _cell._isFirstRow = isFirstRow;
                 _cell._dayIdx = col - 1;
                 _cell.dateStr = _d.getDate()+'-'+(_d.getMonth()+1)+'-'+_d.getFullYear();
-                var div = document.createElement('div');
-                var d = new Date();
-                if (_cell.dateStr == (d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear())) {
+                div = document.createElement('div');
+                d = new Date();
+                if (_cell.dateStr === (d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear())) {
                     _cell.isToday = true;
                     div.className = "today";
                 }
@@ -368,112 +409,111 @@
                 el.setAttribute('data-date-str', _cell.dateStr);
                 _cell.setElement(el);
                 _this.cellsData[_cell.dateStr] = _cell; 
-                if (_this.events[_cell.dateStr]){
+                if (_this.events[_cell.dateStr]) {
                     _cell.setEvent(_this.events[_cell.dateStr]);
                 }
-            }
+            };
 
-            this.getDate = function(){
+            this.getDate = function () {
                 return (_cell._isFirstRow) ? dayNames[_cell._dayIdx] + ', ' + _cell.dt.getDate() : _cell.dt.getDate().toString();
-            }
+            };
 
-            this.onclick = function(e){
+            this.onclick = function (e) {
                 // open event popup
                 _this.removeSelection();
                 _cell.select();
                 _this.showFullEvent(e.target);
-            }
+            };
 
-            this.setElement = function(_el){
+            this.setElement = function (_el) {
                 this.el = _el;
                 this.el.onclick = this.onclick;
-            }
+            };
 
-            this.select = function(){
+            this.select = function () {
                 this._selected = true;
                 _this.addClass(this.el.getElementsByTagName('div')[0], 'selected');
-            }
-            this.unselect = function(){
-                if (this._selected){
+            };
+            this.unselect = function () {
+                if (this._selected) {
                     this._selected = false;
                     _this.removeClass(this.el.getElementsByTagName('div')[0], 'selected');
                 }
-            }
-            this.setEvent = function(e){
+            };
+            this.setEvent = function (e) {
                 _cell.evt = e;
-                var html = _cell.getDate();
-                //html += _cell.dt.getDate().toString();
-                var div = _cell.el.getElementsByTagName('div')[0];
-                var delim = '<br>';
+                var html = _cell.getDate(),
+                    div = _cell.el.getElementsByTagName('div')[0], 
+                    delim = '<br>';
+
                 _this.events[_cell.dateStr] = e;
-                if (e.name) html += delim + e.name;
-                if (e.participants) html += delim + e.participants;
-                if (e.description) html += delim + e.description;
+                if (e.name) {
+                    html += delim + e.name;
+                }
+                if (e.participants) {
+                    html += delim + e.participants;
+                }
+                if (e.description) {
+                    html += delim + e.description;
+                }
                 _this.addClass(div, 'has-event');
                 div.innerHTML = html;
                 _cell.saveEvents();
-            }
+            };
 
-            this.unsetEvent = function(){
+            this.unsetEvent = function () {
                 _cell.evt = null;
                 _cell.el.getElementsByTagName('div')[0].innerHTML = _cell.getDate();
                 _this.events[_cell.dateStr] = undefined;
                 _this.removeClass(_cell.el.getElementsByTagName('div')[0], 'has-event');
                 _cell.saveEvents();
-            }
+            };
 
-            this.saveEvents = function(){
+            this.saveEvents = function () {
                 localStorage.setItem('calEvents', JSON.stringify(_this.events));
-            }
+            };
 
             // init
             this.init(_d, col, el, isFirstRow);
         };
 
-        var getPrevMonthDate = function(dt){
+        var getPrevMonthDate = function (dt) {
             var d = new Date(dt.getTime());
+
             d.setMonth(d.getMonth()-1);
             return d;
-        }
+        };
 
         // dt's month's first day of week
-        var getFirstMonthsDay = function(dt){
+        var getFirstMonthsDay = function (dt) {
             return new Date(dt.getFullYear(), dt.getMonth(), 1).getDay();
             //return new Date((dt.getMonth()+1).toString()+'-01-'+dt.getFullYear().toString()).getDay();
-        }
+        };
+
         // dt's month's first date
-        var getFirstMonthsDate = function(dt){
+        var getFirstMonthsDate = function (dt) {
             return new Date(dt.getFullYear(), dt.getMonth(), 1);
-        }
+        };
 
         // dt's month's last day of week
-        var getLastMonthsDay = function(dt){
+        var getLastMonthsDay = function (dt) {
             return new Date(new Date(dt.getFullYear(), dt.getMonth()+1, 1) - 1).getDay();
-        }
+        };
+
         // last date in dt's month
-        var getMonthsLastDate = function(dt){
+        var getMonthsLastDate = function (dt) {
             return new Date(new Date(dt.getFullYear(), dt.getMonth()+1, 1) - 1).getDate();
-        }
+        };
 
-        var getPrevMonthDaysCnt = function(dt){
+        var getPrevMonthDaysCnt = function (dt) {
             return (6 +  getFirstMonthsDay(dt)) % 7;
-        }
+        };
 
-        var getNextMonthDaysCnt = function(dt){
-            /**
-             * If we need always 6 rows, we can uncomment this
-             * ie feb. 2021 - 28 days - 4 rows.
-             */
-            /*
-            var lastLineDays = (7 * ((getPrevMonthDaysCnt(dt)==6)?0:1));
-            var leapYearDays = 0;
-            if (!isLeapYear(dt.getFullYear()) && getPrevMonthDaysCnt(dt)==0){
-                leapYearDays = 7;
-            }*/
-            return (7 - getLastMonthsDay(dt)) % 7; //+ lastLineDays + leapYearDays;
-        }
+        var getNextMonthDaysCnt = function (dt) {
+            return (7 - getLastMonthsDay(dt)) % 7;
+        };
 
-        if (debug){
+        if (debug) {
             console.log('curMonth = ' + (_this.opts.date.getMonth()+1));
             console.log('daysBefore = ' + getPrevMonthDaysCnt(_this.opts.date));
             console.log('daysAfter = ' + getNextMonthDaysCnt(_this.opts.date));
@@ -482,17 +522,19 @@
         }
 
         // setup calendar
-        this.init = function(o){
+        this.init = function (o) {
+            var i, col, isFirstRow, calStr, prevMonDaysCnt, curMonthDaysCnt, nextMonDaysCnt, tbl, tr, td, _d, _cell, _monthLastDate;
+
             _this.generateLayout();
 
             _this.calBody = document.getElementById(_this.opts.tblID);
 
-            var col = 1;
-            var isFirstRow = true;
-            var calStr = "Пн Вт Ср Чт Пт Сб Вс\n";
-            var prevMonDaysCnt = getPrevMonthDaysCnt(o.date); 
-            var curMonthDaysCnt = getMonthsLastDate(o.date);
-            var nextMonDaysCnt = getNextMonthDaysCnt(o.date);
+            col = 1;
+            isFirstRow = true;
+            calStr = "Пн Вт Ср Чт Пт Сб Вс\n";
+            prevMonDaysCnt = getPrevMonthDaysCnt(o.date); 
+            curMonthDaysCnt = getMonthsLastDate(o.date);
+            nextMonDaysCnt = getNextMonthDaysCnt(o.date);
 
             // init buttons
             _this.setDateText();
@@ -502,22 +544,22 @@
             _this.initAddEventButton();
             //_this.initCreateEventButton();
 
-            var tbl = _this.createElement('table', {id:'cal-tbl'});
-            var tr = tbl.insertRow(-1);
+            tbl = _this.createElement('table', {id:'cal-tbl'});
+            tr = tbl.insertRow(-1);
 
             // add prev month dates
-            for (var i=prevMonDaysCnt; i>0; i--){
-                var td = tr.insertCell(-1);
-                var _d = new Date(getFirstMonthsDate(o.date).getTime() - (DAY * i));
+            for (i = prevMonDaysCnt; i>0; i--) {
+                td = tr.insertCell(-1);
+                _d = new Date(getFirstMonthsDate(o.date).getTime() - (DAY * i));
                 //var _cell = new Cell(_d.getDate()+'-'+(_d.getMonth()+2)+'-'+_d.getFullYear());
                 //createCell(_d, _cell, col, td);
-                var _cell = new Cell(_d, col, td, isFirstRow);
+                _cell = new Cell(_d, col, td, isFirstRow);
 
                 calStr += (col > 1) ? " " : "";
                 calStr += pad(_d.getDate(), 2);
                 col++;
-                if (col == 8){
-                    var tr = tbl.insertRow(-1);
+                if (col === 8) {
+                    tr = tbl.insertRow(-1);
                     col = 1;
                     calStr += "\n";
                     isFirstRow = false;
@@ -525,36 +567,34 @@
             }
 
             // add cur month dates 
-            for (var i=0; i<curMonthDaysCnt; i++){
-                var td = tr.insertCell(-1);
-                var _d = new Date(_this.opts.date.getFullYear(), _this.opts.date.getMonth(), i+1);
-                //var _cell = new Cell(_d.getDate()+'-'+(_d.getMonth()+1)+'-'+_d.getFullYear());
-                //createCell(_d, _cell, col, td);
-                var _cell = new Cell(_d, col, td, isFirstRow);
+            for (i=0; i<curMonthDaysCnt; i++) {
+                td = tr.insertCell(-1);
+                _d = new Date(_this.opts.date.getFullYear(), _this.opts.date.getMonth(), i+1);
+                _cell = new Cell(_d, col, td, isFirstRow);
                 calStr += (col > 1) ? " " : "";
                 calStr += pad(i+1, 2);
                 col++;
-                if (col == 8){
-                    var tr = tbl.insertRow(-1);
+                if (col === 8) {
+                    tr = tbl.insertRow(-1);
                     col = 1;
-                    if (debug) calStr += "\n";
+                    if (debug) {
+                        calStr += "\n";
+                    }
                     isFirstRow = false;
                 }
             }
 
             // add next moth dates
-            for (var i=0; i<nextMonDaysCnt; i++){
-                var td = tr.insertCell(-1);
-                var _monthLastDate = new Date(_this.opts.date.getFullYear(), _this.opts.date.getMonth(), getMonthsLastDate(_this.opts.date));
-                var _d = new Date(_monthLastDate.getTime() + (DAY * (i+1)));
-                //var _cell = new Cell(_d.getDate()+'-'+(_d.getMonth()+1)+'-'+_d.getFullYear());
-                //createCell(_d, _cell, col, td);
-                var _cell = new Cell(_d, col, td, isFirstRow);
+            for (i=0; i<nextMonDaysCnt; i++) {
+                td = tr.insertCell(-1);
+                _monthLastDate = new Date(_this.opts.date.getFullYear(), _this.opts.date.getMonth(), getMonthsLastDate(_this.opts.date));
+                _d = new Date(_monthLastDate.getTime() + (DAY * (i+1)));
+                _cell = new Cell(_d, col, td, isFirstRow);
 
                 calStr += (col > 1) ? " " : "";
                 calStr += pad(i+1, 2);
                 col++;
-                if (col == 8){
+                if (col === 8) {
                     col = 1;
                     calStr += "\n";
                 }
@@ -564,31 +604,34 @@
             _this.calBody.appendChild(tbl);
 
             // show cal
-            if (debug) console.log(calStr);
-        }
+            debug && console.log(calStr);
+        };
 
-        this.generateLayout = function(){
+        this.generateLayout = function () {
+            var calContainer = document.getElementById(_this.opts.calID),
+                eventPanel, addEventBtn, updateEventBtn, searchInput, searchIcon, controls, prevMon, prevMonImg, 
+                dateStr, nextMon, nextMonImg, today, addEventFast, closeEventFast, eventText, createBtn, fullEvent, 
+                closeFullEvent, feArrow, feAImg, feContent, aefArrow, aefAImg;
 
-            var calContainer = document.getElementById(_this.opts.calID);
             calContainer.innerHTML = "";
 
             // create event panel
-            var eventPanel = _this.createElement('div', {}, 'event-panel');
-            var addEventBtn = _this.createElement('a', {
+            eventPanel = _this.createElement('div', {}, 'event-panel');
+            addEventBtn = _this.createElement('a', {
                 id : 'add-event-btn',
                 href : '#'
             }, 'button');
             addEventBtn.innerHTML = "Добавить";
-            var updateEventBtn = _this.createElement('a', {
+            updateEventBtn = _this.createElement('a', {
                 href : '#'
             }, 'button');
             updateEventBtn.innerHTML = "Обновить";
-            var searchInput = _this.createElement('input', {
+            searchInput = _this.createElement('input', {
                 id : "search-events",
                 placeholder : "Событие, дата или участник",
                 type : "text"
             });
-            var searchIcon = _this.createElement('img', {src : "img/search.png"}, 'search-icon');
+            searchIcon = _this.createElement('img', {src : "img/search.png"}, 'search-icon');
             eventPanel.appendChild(addEventBtn);
             eventPanel.appendChild(updateEventBtn);
             eventPanel.appendChild(searchInput);
@@ -597,21 +640,21 @@
             // <<< panel added
 
             // create controls panel
-            var controls = _this.createElement('div', {id : 'controls', });
-            var prevMon = _this.createElement('a',{
+            controls = _this.createElement('div', {id : 'controls', });
+            prevMon = _this.createElement('a',{
                 id : 'prev-month',
                 href : '#'
             }, 'month-links');
-            var prevMonImg = _this.createElement('img', {src : "img/arr_prev.png", alt : "<<"});
+            prevMonImg = _this.createElement('img', {src : "img/arr_prev.png", alt : "<<"});
             prevMon.appendChild(prevMonImg);
-            var dateStr = _this.createElement('span', {id : 'date-str'});
-            var nextMon = _this.createElement('a',{
+            dateStr = _this.createElement('span', {id : 'date-str'});
+            nextMon = _this.createElement('a',{
                 id : 'next-month',
                 href : '#'
             }, 'month-links');
-            var nextMonImg = _this.createElement('img', {src : "img/arr_next.png", alt : ">>"});
+            nextMonImg = _this.createElement('img', {src : "img/arr_next.png", alt : ">>"});
             nextMon.appendChild(nextMonImg);
-            var today = _this.createElement('a', {id : 'today', href : '#'});
+            today = _this.createElement('a', {id : 'today', href : '#'});
             today.innerHTML = "Сегодня";
             controls.appendChild(prevMon);
             controls.appendChild(dateStr);
@@ -623,24 +666,24 @@
             calContainer.appendChild(_this.createElement('div', {id : 'cal-body'}));
 
             // add add-event-fast popup
-            var addEventFast = _this.createElement('div', {id : 'add-event-fast'});
-            var closeEventFast = _this.createElement('div', {id : 'close-fast-popup'}, 'close');
+            addEventFast = _this.createElement('div', {id : 'add-event-fast'});
+            closeEventFast = _this.createElement('div', {id : 'close-fast-popup'}, 'close');
             closeEventFast.innerHTML = 'x';
             addEventFast.appendChild(closeEventFast);
-            var aefArrow = _this.createElement('div', {}, 'arrow');
-            var aefAImg = _this.createElement('img', {
+            aefArrow = _this.createElement('div', {}, 'arrow');
+            aefAImg = _this.createElement('img', {
                 src : 'img/up-arrow.png',
                 alt : ''
             });
             aefArrow.appendChild(aefAImg);
             addEventFast.appendChild(aefArrow);
-            var eventText = _this.createElement('input', {
+            eventText = _this.createElement('input', {
                 type : 'text',
                 id : 'evt-text',
                 placeholder : '5 Марта, День рождения',
             });
             addEventFast.appendChild(eventText);
-            var createBtn = _this.createElement('a', {
+            createBtn = _this.createElement('a', {
                 href : "#",
                 id : 'add-event'
             }, 'rnd-button');
@@ -649,23 +692,23 @@
             calContainer.appendChild(addEventFast);
 
             // add full-event
-            var fullEvent = _this.createElement('div', {id : 'full-event'});
-            var closeFullEvent = _this.createElement('div', {id : 'close-full-event'}, 'close');
+            fullEvent = _this.createElement('div', {id : 'full-event'});
+            closeFullEvent = _this.createElement('div', {id : 'close-full-event'}, 'close');
             closeFullEvent.innerHTML = 'x';
             fullEvent.appendChild(closeFullEvent);
-            var feArrow = _this.createElement('div', {}, 'arrow');
-            var feAImg = _this.createElement('img', {
+            feArrow = _this.createElement('div', {}, 'arrow');
+            feAImg = _this.createElement('img', {
                 src : 'img/left-arrow.png',
                 alt : '<'
             });
             feArrow.appendChild(feAImg);
             fullEvent.appendChild(feArrow);
 
-            var feContent = _this.createElement('div', {id : 'fe-content'});
+            feContent = _this.createElement('div', {id : 'fe-content'});
             fullEvent.appendChild(feContent);
 
             calContainer.appendChild(fullEvent);
-        } 
+        };
 
         this.init(_this.opts);
     };
